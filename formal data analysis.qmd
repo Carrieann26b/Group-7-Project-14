@@ -1,0 +1,158 @@
+# Formal data analysis
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+
+library(ggplot2)
+library(tidyverse)
+library(gt)
+```
+
+### Questions of interest
+
+There are two questions of interest in this study:\
+(a) Did Edinburgh exhibit a change in measles susceptibility following the retraction of the Wakefield's article?\
+(b) Did the change, if any, in measles susceptibility occur in 2004 alongside the article’s retraction?
+
+```{r}
+#| echo: false
+#| eval: true
+
+measles <- read.csv("DAProject14.csv")
+```
+
+### Methodology
+
+First, the measles susceptibility rate for each of Edinburgh’s 101 Intermediate Zones (IZ) was calculated using the formula:
+
+$$
+Measles~Susceptibility~Rate=\frac{Susceptibility~Children}{Total~Children}
+$$
+
+This computation yielded a new column, as presented in the following table.
+
+```{r}
+#| echo: false
+#| eval: true
+#| cache: true
+
+# Calculate the measles susceptibility rate
+measles$rate <- measles$Y / measles$N
+
+rate_table <- measles %>%
+  head() %>%
+  gt() %>%
+  tab_header(title = "Measles Susceptibility Data") %>%
+  cols_label(
+    Year = "Year",
+    Y = "Susceptible Children",
+    N = "Total Children",
+    rate = "Susceptibility Rate") %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body(columns = everything()))
+
+rate_table
+```
+
+Next, the dataset was grouped by year to derive the yearly average measles susceptibility rate, as shown in the table below.
+
+```{r}
+#| echo: false
+#| eval: true
+
+# Calculate the yearly average measles susceptibility rate
+yearly_avg_rate <-  measles %>%
+  group_by(Year) %>%
+  summarise(Average_Rate = mean(rate))
+
+avg_rate_table <- yearly_avg_rate %>%
+  head() %>%
+  gt() %>%
+  tab_header(title = "Yearly Average Measles Susceptibility Rate Data") %>%
+  cols_label(
+    Year = "Year", 
+    Average_Rate = "Average Susceptibility Rate")
+
+avg_rate_table
+```
+
+### Visualization and Analysis
+
+A line graph was plotted based on the yearly average measles susceptibility rates, as presented in the figure below.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-align: center
+#| fig-cap: Line graph of measles susceptibility rate in Edinburgh (1998-2014)
+#| label: fig-line
+
+# Plot a line graph
+ggplot(yearly_avg_rate, aes(x = Year, y = Average_Rate)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(color = "blue",size = 3) +
+  geom_vline(xintercept = 2004, color = "red", linetype = "dashed") +
+  geom_text(aes(x = 2004, y = min(yearly_avg_rate$Average_Rate), label = "2004"),
+            color = "red", size = 4) +
+  labs(title = "Measles Susceptibility Rate in Edinburgh (1998-2014)",
+       x = "Year", y = "Average Susceptibility Rate")
+```
+
+The graph clearly indicates that the yearly average measles susceptibility rate initially increased, peaked in 2004, and then consistently declined.
+
+Furthermore, a t-test was conducted to statistically evaluate the difference in measles susceptibility rates before and after 2004.
+
+$$
+H_0:\mu_{pre2004}=\mu_{post2004}~~~~\text{and}~~~~H_1:\mu_{pre2004}\neq\mu_{post2004}
+$$
+
+The table shows that p-value is less than 0.05, so we reject the null hypothesis.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-align: center
+
+# Split the data (with 2004 as the boundary)
+pre_2004 <- measles %>% 
+  dplyr::filter(Year < 2004) %>% 
+  pull(rate)
+post_2004 <- measles %>% 
+  dplyr::filter(Year >= 2004) %>% 
+  pull(rate)
+
+# t test
+t_test <- t.test(pre_2004, post_2004)
+
+t_test_df <- data.frame(
+  "Statistic" = c("t-value", "Degrees of Freedom", "p-value", 
+                  "95% CI Lower", "95% CI Upper", 
+                  "Mean of pre_2004", "Mean of post_2004"),
+  "Value" = c(
+    round(t_test$statistic, 4),
+    round(t_test$parameter, 4),
+    round(t_test$p.value, 4),
+    round(t_test$conf.int[1], 4),
+    round(t_test$conf.int[2], 4),
+    round(t_test$estimate[1], 4),
+    round(t_test$estimate[2], 4)
+  ))
+
+t_test_table <- t_test_df %>%
+  gt() %>%
+  tab_header(title = "T-Test Results") %>%
+  cols_label(
+    Statistic = "Statistic",
+    Value = "Value")
+
+t_test_table
+```
+
+### Conclusion
+
+These findings answer the second question, providing evidence to support that the observed change in measles susceptibility rates is associated with the retraction of the Wakefield's article.
