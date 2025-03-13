@@ -1,0 +1,60 @@
+---
+title: "Group Project"
+format: html
+editor: visual
+---
+
+# Exploratory Analysis
+
+We begin our exploratory analysis by creating a new column in the dataset which calculates the proportion of pre-school children that are susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ). This is what we are interested in modelling. For each year, we can calculate the mean proportion of children susceptible to measles. A summary is presented below:
+
+```{r}
+#| include: false
+library(ggplot2)
+library(tidyverse)
+library(gt)
+library(tidymodels)
+library(skimr)
+library(moderndive)
+library(dplyr)
+```
+
+```{r}
+#| include: false
+data <- read.csv("DAProject14.csv")
+```
+
+```{r}
+#| label: tbl-summary
+#| echo: false
+#| message: false
+#| warning: false
+#| tbl-cap: Mean proportion of pre-school children susceptible to measles by year.
+
+data$prop <- data$Y/data$N
+yearly_avg <- data %>%
+  group_by(Year) %>%
+  summarise(Mean_Susceptibility = mean(prop))
+yearly_avg_table <-  pivot_wider(yearly_avg, names_from = "Year", values_from = "Mean_Susceptibility")
+yearly_avg_table |> gt() |> 
+  fmt_number(decimals=3)
+```
+
+From @tbl-summary, we can see that between 1998 and 2004, the mean proportion of pre-school children susceptible to measles increased. With a larger increase between 2002 and 2004. After 2004, there was a consistent decrease in the mean proportions. The mean proportion of pre-school children susceptible to measles in 2014 is approximately half of the mean proportion in 2006.
+
+```{r}
+#| echo: false
+#| fig-cap: Distribution of mean proportion of measles susceptibility by year (1998 - 2014). 
+#| label: fig-boxplot
+#| fig-align: center
+#| fig-height: 3.5
+#| fig-width: 4.5
+ggplot(data, aes(x = as.factor(Year), y = prop)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(x = "Year",
+       y = "Proportion Susceptible") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+From @fig-boxplot, we can see that the variability in the proportion of children susceptible is greater in the earlier years (1998-2004), since the boxplots are wider. The median proportion increased between 1998 and 2004, then began to decrease from 2006 onwards. Most of the boxplots appear to be symmetric, however there are a few outliers for each year.
