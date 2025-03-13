@@ -10,6 +10,8 @@ execute:
 
 # Exploratory Analysis
 
+We begin our exploratory analysis by creating a new column in the dataset which calculates the proportion of pre-school children that are susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ). This is what we are interested in modelling. For each year, we can calculate the mean proportion of children susceptible to measles. A summary is presented below:
+
 ```{r}
 #| include: false
 library(ggplot2)
