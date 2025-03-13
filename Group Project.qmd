@@ -2,33 +2,76 @@
 title: "Group Project"
 format: html
 editor: visual
+execute: 
+  echo: false
+  warning: false
+  message: false
 ---
 
-## Test
-
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+# Exploratory Analysis
 
 ```{r}
-1 + 1
+#| include: false
+library(ggplot2)
+library(tidyverse)
+library(gt)
+library(tidymodels)
+library(skimr)
+library(moderndive)
+library(dplyr)
 ```
 
-You can add options to executable code like this
+```{r}
+#| include: false
+data <- read.csv("DAProject14.csv")
+
+```
 
 ```{r}
+#| label: tbl-summary
 #| echo: false
-2 * 2
+#| message: false
+#| warning: false
+#| tbl-cap: "Mean proportion of pre-school children susceptible to measles by year."
+
+data$prop <- data$Y/data$N
+yearly_avg <- data %>%
+  group_by(Year) %>%
+  summarise(Mean_Susceptibility = mean(prop))
+yearly_avg_table <-  pivot_wider(yearly_avg, names_from = "Year", values_from = "Mean_Susceptibility")
+yearly_avg_table |> gt() |> 
+  fmt_number(decimals=3)
+
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
-
-## Exploratory Analysis
+From @tbl-summary, we can see that between 1998 and 2004, the mean proportion of pre-school children susceptible to measles increased. With a larger increase between 2002 and 2004. After 2004, there was a sharp decrease in the mean proportions. The mean proportion of pre-school children susceptible to measles in 2014 is approximately half of the mean proportion in 2006.
 
 ```{r}
-read.csv("DAProject14.csv")
+#|echo: false
+#|fig-cap: "Mean measles susceptibilty over time"
+#|label: fig-scatterplot
+#| fig-align: center
+#| fig-width: 4.5
+#| fig-height: 3.5
+
+ggplot(yearly_avg, aes(x = Year, y = Mean_Susceptibility)) +
+  geom_line(colour = "turquoise3", size = 1) +
+  geom_point(colour = "palevioletred", size = 2) +
+  geom_vline(xintercept = 2004, linetype = "dashed", colour = "black")
+```
+
+From @fig-scatterplot we can see that there is a peak in mean susceptibility in 2004 before a sharp decrease afterwards, this aligns with all other plots and summaries we have seen before.
+
+```{r}
+#|fig-cap: "Count of IZ with the same value of Y separated by Year"
+#|label: fig-barY
+#| fig-align: center
+#| fig-width: 4.5
+#| fig-height: 3.5
+
+ggplot(data = data, aes(x = Y, fill = Year)) +
+  geom_bar(show.legend = F) + 
+  facet_wrap(Year~.) +
+  scale_fill_binned()
+
 ```
