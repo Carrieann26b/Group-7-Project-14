@@ -95,3 +95,5 @@ ggplot(data = data, aes(x = Y, fill = Year)) +
   scale_fill_binned()
 
 ```
+
+The histograms for the years 1998-2004 look relatively similar. From 2006 onwards, the histograms appear to be slightly left-skewed. For the earlier years (1998-2004), there is more variability in the number of children susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ). 
