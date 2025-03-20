@@ -62,8 +62,3 @@ ggplot(Project14_means, aes(x = Year, y = mean_Y)) +
 model.project <- lm(Y ~ Year + N, data = Project14)
 summary(model.project)
 
-install.packages("PASWR")
-library(PASWR)
-EDA(Project14_means$Y)
-EDA(Project14$N)
-
