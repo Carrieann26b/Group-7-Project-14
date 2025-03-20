@@ -2,10 +2,6 @@
 title: "Group Project"
 format: html
 editor: visual
-execute: 
-  echo: false
-  warning: false
-  message: false
 ---
 
 # Exploratory Analysis
@@ -26,7 +22,6 @@ library(dplyr)
 ```{r}
 #| include: false
 data <- read.csv("DAProject14.csv")
-
 ```
 
 ```{r}
@@ -34,7 +29,7 @@ data <- read.csv("DAProject14.csv")
 #| echo: false
 #| message: false
 #| warning: false
-#| tbl-cap: "Mean proportion of pre-school children susceptible to measles by year."
+#| tbl-cap: Mean proportion of pre-school children susceptible to measles by year.
 
 data$prop <- data$Y/data$N
 yearly_avg <- data %>%
@@ -43,10 +38,9 @@ yearly_avg <- data %>%
 yearly_avg_table <-  pivot_wider(yearly_avg, names_from = "Year", values_from = "Mean_Susceptibility")
 yearly_avg_table |> gt() |> 
   fmt_number(decimals=3)
-
 ```
 
-From @tbl-summary, we can see that between 1998 and 2004, the mean proportion of pre-school children susceptible to measles increased. With a larger increase between 2002 and 2004. After 2004, there was a sharp decrease in the mean proportions. The mean proportion of pre-school children susceptible to measles in 2014 is approximately half of the mean proportion in 2006.
+From @tbl-summary, we can see that between 1998 and 2004, the mean proportion of pre-school children susceptible to measles increased. With a larger increase between 2002 and 2004. After 2004, there was a consistent decrease in the mean proportions. The mean proportion of pre-school children susceptible to measles in 2014 is approximately half of the mean proportion in 2006.
 
 ```{r}
 #| echo: false
@@ -64,36 +58,3 @@ ggplot(data, aes(x = as.factor(Year), y = prop)) +
 ```
 
 From @fig-boxplot, we can see that the variability in the proportion of children susceptible is greater in the earlier years (1998-2004), since the boxplots are wider. The median proportion increased between 1998 and 2004, then began to decrease from 2006 onwards. Most of the boxplots appear to be symmetric, however there are a few outliers for each year.
-
-
-```{r}
-#|echo: false
-#|fig-cap: "Mean measles susceptibilty over time"
-#|label: fig-scatterplot
-#| fig-align: center
-#| fig-width: 4.5
-#| fig-height: 3.5
-
-ggplot(yearly_avg, aes(x = Year, y = Mean_Susceptibility)) +
-  geom_line(colour = "turquoise3", size = 1) +
-  geom_point(colour = "palevioletred", size = 2) +
-  geom_vline(xintercept = 2004, linetype = "dashed", colour = "black")
-```
-
-From @fig-scatterplot we can see that there is a peak in mean susceptibility in 2004 before a sharp decrease afterwards, this aligns with all other plots and summaries we have seen before.
-
-```{r}
-#|fig-cap: "Count of IZ with the same value of Y separated by Year"
-#|label: fig-barY
-#| fig-align: center
-#| fig-width: 4.5
-#| fig-height: 3.5
-
-ggplot(data = data, aes(x = Y, fill = Year)) +
-  geom_bar(show.legend = F) + 
-  facet_wrap(Year~.) +
-  scale_fill_binned()
-
-```
-
-The histograms for the years 1998-2004 look relatively similar. From 2006 onwards, the histograms appear to be slightly left-skewed. For the earlier years (1998-2004), there is more variability in the number of children susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ). 
