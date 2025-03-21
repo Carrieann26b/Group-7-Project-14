@@ -8,7 +8,15 @@ execute:
   message: false
 ---
 
-# Exploratory Analysis
+# 1. Introduction
+
+Between 1998 and 2014, data were collected by The Scottish Childhood Immunisation Record System on measles, mumps and rubella (MMR) vaccination uptake. In 1998, Wakefield et al. published an article which linked the MMR vaccine with an increased risk of autism, which decreased the vaccination rates in 2003 across the United Kingdom. The article was partially withdrawn in 2004, then later discredited in 2010. This report aims to answer two main questions:
+
+-   Did Glasgow exhibit a change in measles susceptibility following the retraction of the Wakefield article?
+
+-   Did the change, if any, in measles susceptibility occur in 2004 alongside the articles’ retraction?
+
+# 2. Exploratory Analysis
 
 We begin our exploratory analysis by creating a new column in the dataset which calculates the proportion of pre-school children that are susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ). This is what we are interested in modelling. For each year, we can calculate the mean proportion of children susceptible to measles. A summary is presented below:
 
@@ -65,7 +73,6 @@ ggplot(data, aes(x = as.factor(Year), y = prop)) +
 
 From @fig-boxplot, we can see that the variability in the proportion of children susceptible is greater in the earlier years (1998-2004), since the boxplots are wider. The median proportion increased between 1998 and 2004, then began to decrease from 2006 onwards. Most of the boxplots appear to be symmetric, however there are a few outliers for each year.
 
-
 ```{r}
 #|echo: false
 #|fig-cap: "Mean measles susceptibilty over time"
@@ -96,8 +103,7 @@ ggplot(data = data, aes(x = Y, fill = Year)) +
 
 ```
 
-The histograms for the years 1998-2004 look relatively similar. From 2006 onwards, the histograms appear to be slightly left-skewed. For the earlier years (1998-2004), there is more variability in the number of children susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ). 
-
+The histograms for the years 1998-2004 look relatively similar. From 2006 onwards, the histograms appear to be slightly left-skewed. For the earlier years (1998-2004), there is more variability in the number of children susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ).
 
 # Formal data analysis
 
