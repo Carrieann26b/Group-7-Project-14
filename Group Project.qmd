@@ -105,7 +105,7 @@ ggplot(data = data, aes(x = Y, fill = Year)) +
 
 The histograms for the years 1998-2004 look relatively similar. From 2006 onwards, the histograms appear to be slightly left-skewed. For the earlier years (1998-2004), there is more variability in the number of children susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ).
 
-# Formal data analysis
+# 3. Formal data analysis
 
 ```{r}
 #| echo: false
@@ -118,12 +118,6 @@ library(gt)
 library(tidymodels)
 ```
 
-### Questions of interest
-
-There are two questions of interest in this study:\
-(a) Did Edinburgh exhibit a change in measles susceptibility following the retraction of the Wakefield's article?\
-(b) Did the change, if any, in measles susceptibility occur in 2004 alongside the article's retraction?
-
 ```{r}
 #| echo: false
 #| eval: true
@@ -131,7 +125,7 @@ There are two questions of interest in this study:\
 measles <- read.csv("DAProject14.csv")
 ```
 
-### Methodology
+### 3.1 Methodology
 
 First, the measles susceptibility rate for each of Edinburgh's 101 Intermediate Zones (IZ) was calculated using the formula:
 
@@ -187,7 +181,7 @@ avg_rate_table <- yearly_avg_rate %>%
 avg_rate_table
 ```
 
-### Forming a model
+### 3.2 Forming a model
 
 Here we will fit a simple linear regression model to the `measles` data.
 
@@ -233,7 +227,7 @@ ggplot(yearly_avg_rate, aes(x=Year, y=Average_Rate)) +
 
 ```
 
-### Visualization and Analysis
+### 3.3 Visualization and Analysis
 
 A line graph was plotted based on the yearly average measles susceptibility rates, as presented in the figure below.
 
@@ -307,6 +301,6 @@ t_test_table <- t_test_df %>%
 t_test_table
 ```
 
-### Conclusion
+# 4. Conclusion
 
 These findings answer the second question, providing evidence to support that the observed change in measles susceptibility rates is associated with the retraction of the Wakefield's article.
