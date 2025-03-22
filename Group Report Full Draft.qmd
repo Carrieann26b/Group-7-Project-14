@@ -1,0 +1,302 @@
+---
+title: "Group Project"
+format: html
+editor: visual
+execute: 
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| include: false
+library(ggplot2)
+library(tidyverse)
+library(gt)
+library(tidymodels)
+library(skimr)
+library(moderndive)
+library(dplyr)
+library(knitr)
+library(ggfortify)
+library(patchwork)
+library(parsnip)
+```
+
+```{r}
+#| include: false
+data <- read.csv("DAProject14.csv")
+measles <- read.csv("DAProject14.csv")
+```
+
+# 1. Introduction {#sec-intro}
+
+Between 1998 and 2014, data were collected by The Scottish Childhood Immunisation Record System on measles, mumps and rubella (MMR) vaccination uptake. In 1998, Wakefield et al. published an article which linked the MMR vaccine with an increased risk of autism, which decreased the vaccination rates in 2003 across the United Kingdom. The article was partially withdrawn in 2004, then later discredited in 2010. This report aims to answer two main questions:
+
+-   Did Edinburgh exhibit a change in measles susceptibility following the retraction of the Wakefield article?
+
+-   Did the change, if any, in measles susceptibility occur in 2004 alongside the articles’ retraction?
+
+# 2. Exploratory Analysis {#sec-explore}
+
+We begin our exploratory analysis by creating a new column in the dataset which calculates the proportion of pre-school children that are susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ). This is what we are interested in modelling and it is calculated using the formula:
+
+$$ Measles~Susceptibility~Rate=\frac{Susceptibility~Children}{Total~Children} $$
+
+This computation yielded a new column, as presented in the following table.
+
+```{r}
+#| echo: false
+#| eval: true
+#| cache: true
+
+# Calculate the measles susceptibility rate
+measles$rate <- measles$Y / measles$N
+yearly_avg_rate <-  measles %>%
+  group_by(Year) %>%
+  summarise(Average_Rate = mean(rate))
+
+rate_table <- measles %>%
+  head() %>%
+  gt() %>%
+  tab_header(title = "Measles Susceptibility Data") %>%
+  cols_label(
+    Year = "Year",
+    Y = "Susceptible Children",
+    N = "Total Children",
+    rate = "Susceptibility Rate") %>%
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_body(columns = everything()))
+
+rate_table
+```
+
+For each year, we can calculate the mean proportion of children susceptible to measles. A summary is presented below:
+
+```{r}
+#| label: tbl-summary
+#| echo: false
+#| message: false
+#| warning: false
+#| tbl-cap: "Mean proportion of pre-school children susceptible to measles by year."
+
+yearly_avg_table <-  pivot_wider(yearly_avg_rate, names_from = "Year", values_from = "Average_Rate")
+yearly_avg_table |> gt() |> 
+  fmt_number(decimals=3)
+```
+
+From @tbl-summary, we can see that between 1998 and 2004, the mean proportion of pre-school children susceptible to measles increased. With a larger increase between 2002 and 2004. After 2004, there was a sharp decrease in the mean proportions. The mean proportion of pre-school children susceptible to measles in 2014 is approximately half of the mean proportion in 2006.
+
+```{r}
+#| echo: false
+#| fig-cap: Distribution of mean proportion of measles susceptibility by year (1998 - 2014). 
+#| label: fig-boxplot
+#| fig-align: center
+#| fig-height: 2.5
+#| fig-width: 4
+
+ggplot(measles, aes(x = as.factor(Year), y = rate)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(x = "Year",
+       y = "Proportion Susceptible") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+From @fig-boxplot, we can see that the variability in the proportion of children susceptible is greater in the earlier years (1998-2004), since the boxplots are wider. The median proportion increased between 1998 and 2004, then began to decrease from 2006 onwards. Most of the boxplots appear to be symmetric, however there are a few outliers for each year.
+
+```{r}
+#| echo: false
+#| fig-cap: Mean measles susceptibility over time. 
+#| label: fig-plot
+#| fig-align: center
+#| fig-height: 2.5
+#| fig-width: 4
+
+yearly_avg <- measles %>%
+  group_by(Year) %>%
+  summarise(Mean_Susceptibility = mean(rate))
+ggplot(yearly_avg, aes(x = Year, y = Mean_Susceptibility)) +
+  geom_line(colour = "turquoise3", size = 1) +
+  geom_point(colour = "palevioletred", size = 2) +
+  geom_vline(xintercept = 2004, linetype = "dashed", colour = "black") +
+  labs(x = "Year", y = "Average Susceptibility")
+```
+
+From @fig-plot we can see that there is a peak in mean susceptibility in 2004 before a sharp decrease afterwards, this aligns with all other plots and summaries we have seen before.
+
+```{r}
+#| echo: false
+#| fig-cap: Histogram showing distribution of average measles suscepitibility for each year.  
+#| label: fig-histograms
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 4
+
+ggplot(data = data, aes(x = Y, fill = Year)) +
+  geom_bar(show.legend = F) + 
+  facet_wrap(Year~.) +
+  scale_fill_binned()
+
+```
+
+The histograms for the years 1998-2004 look relatively similar. From 2006 onwards, the histograms appear to be slightly right-skewed. For the earlier years (1998-2004), there is more variability in the number of children susceptible to measles in each of Edinburgh's 101 Intermediate Zones (IZ).
+
+# 3. Formal data analysis {#sec-formal}
+
+### 3.1 Forming a model
+
+Here we will fit a simple linear regression model to the `measles` data.
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+model <- linear_reg() |>
+  fit(Average_Rate ~ Year, data=yearly_avg_rate)
+model$fit
+summary(model$fit)
+```
+
+Our best-fitting line to the data is:
+
+$$
+\widehat{average ~ rate}= \hat{\alpha} + \hat{\beta}x_i = 11.716 - 0.006\cdot{year}
+$$ where:
+
+-   $\hat{\alpha}$=11.716 is the intercept coefficient and means that for a given IZ with a `Year=0`, their `Average_Rate` would be 11.716. Note that `Year=0` is not actually possible in our data set.
+
+-   $\hat{\beta}$=-0.006 is the slope coefficient associated with the explanatory variable `Average_Rate`. This summarises the relationship between our response variable, `Year`, and our explanatory variable `Average_Rate`. Since the slope coefficient is negative, this means that `Year` and `Average_Rate` have a negative linear relationship, i.e. as `Average_Rate` increases, `Year` decreases. Furthermore, for every 1 unit increase in `Average_Rate`, there is an associated decrease of, on average 0.006 units of `Year`.
+
+The overall p-value for this model is 0.002. Since this is less than 0.05, we can say that the model fits the data sufficiently well.
+
+The R^2^ Adj. value of 0.7315 shows the model fits well but there is potential room for improvement. This could be potentially due to the number of predictors being low, meaning we are possibly missing some of the complexity of the model.
+
+Here is the model summary.
+
+```{r}
+#| label: tbl-slr-model
+#| echo: false
+#| message: false
+#| warning: false
+#| tbl-cap: "Simple linear regression model"
+
+tidy(model, conf.int = T)  %>% gt()
+```
+
+@fig-avgprop-year-lm is a plot of our data with a line of best fit superimposed.
+
+```{r}
+#| eval: true
+#| label: fig-avgprop-year-lm
+#| fig-width: 4
+#| fig-height: 2.5
+#| fig-align: center
+#| fig-cap: Jittered scatterplot of measles susceptibility by year
+
+ggplot(yearly_avg_rate, aes(x=Year, y=Average_Rate)) +
+  geom_jitter() +
+  labs(x= "Year", y="Average proportion of measle susceptibility", title="Measles susceptibility by year") +
+  geom_smooth(method="lm", se=FALSE)
+
+```
+
+### 3.2 Assessing model fit
+
+```{r}
+#| eval: true
+#| label: fig-model_assumptions
+#| fig-width: 4
+#| fig-height: 3.5
+#| fig-align: center
+#| fig-cap: Assessing model assumptions
+
+plots <-autoplot(model, labels = FALSE, label.size = 0)
+p1 <- plots[[1]] + labs(x = "Residuals", y = "Resid. vs fitt.")
+p2 <- plots[[2]] + labs(x = "Theoretical Quantiles",y= "Stand. Resid")
+p3 <- plots[[3]] + labs(x = "Fitted values", y = "sqrt. Stand Resid")
+p4 <- plots[[4]] + labs(x = "Leverage", y = "Stand. Resid")
+
+(p1 |p2)/(p3|p4)
+```
+
+The majority of the points lie on the line in the QQ-plots. This means we can say the normality assumption is satisfied. The points lie fairly equal around the zero-line in the residuals plot, although it isn't overly clear. This means that the constant variance and zero-mean assumption is also satisfied. The independence assumption is also inherently satisfied due to the way that the data are collected.
+
+### 3.3 Visualization and Analysis
+
+A line graph was plotted based on the yearly average measles susceptibility rates, as presented in the figure below.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| fig-width: 4
+#| fig-height: 2.5
+#| fig-align: center
+#| label: fig-line
+#| fig-cap: Line graph of measles susceptibility rate in Edinburgh (1998-2014)
+
+# Plot a line graph
+ggplot(yearly_avg_rate, aes(x = Year, y = Average_Rate)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(color = "blue",size = 3) +
+  geom_vline(xintercept = 2004, color = "red", linetype = "dashed") +
+  geom_text(aes(x = 2004, y = min(yearly_avg_rate$Average_Rate), label = "2004"),
+            color = "red", size = 4) +
+  labs(x = "Year", y = "Average Susceptibility Rate")
+```
+
+This graph, similar to @fig-plot, clearly indicates that the yearly average measles susceptibility rate initially increased, peaked in 2004, and then consistently declined.
+
+Furthermore, a t-test was conducted to statistically evaluate the difference in measles susceptibility rates before and after 2004.
+
+$$
+H_0:\mu_{pre2004}=\mu_{post2004}~~~~\text{and}~~~~H_1:\mu_{pre2004}\neq\mu_{post2004}
+$$
+
+The table shows that p-value is less than 0.05, so we reject the null hypothesis.
+
+```{r}
+
+# Split the data (with 2004 as the boundary)
+pre_2004 <- measles %>% 
+  dplyr::filter(Year < 2004) %>% 
+  pull(rate)
+post_2004 <- measles %>% 
+  dplyr::filter(Year >= 2004) %>% 
+  pull(rate)
+
+# t test
+t_test <- t.test(pre_2004, post_2004)
+
+t_test_df <- data.frame(
+  "Statistic" = c("t-value", "Degrees of Freedom", "p-value", 
+                  "95% CI Lower", "95% CI Upper", 
+                  "Mean of pre_2004", "Mean of post_2004"),
+  "Value" = c(
+    round(t_test$statistic, 4),
+    round(t_test$parameter, 4),
+    round(t_test$p.value, 4),
+    round(t_test$conf.int[1], 4),
+    round(t_test$conf.int[2], 4),
+    round(t_test$estimate[1], 4),
+    round(t_test$estimate[2], 4)
+  ))
+
+t_test_table <- pivot_wider(t_test_df,names_from = "Statistic", values_from = "Value")
+t_test_table |> gt()
+```
+
+# 4. Conclusions {#sec-conc}
+
+During @sec-explore we could see hints that there was a change in measles susceptibility, this was initially shown in @tbl-summary, and then once again in @fig-boxplot, @fig-plot and @fig-histograms . All of these plots also show the change happening after 2004.
+
+In @sec-formal, a linear model with Year as a predictor, and Average Susceptibility Rate as the response. The model assumptions of normality, zero-mean, and constant variance are satisfied.The R^2^ Adj. value of 0.7315 shows the model fits well but there is potential room for improvement. This could be potentially due to the number of predictors being low, meaning we are possibly missing some of the complexity of the model.
+
+In the model summary @tbl-slr-model , both the intercept (Average Rate) and the Year variable are significant with p-values lower than 0.05. This is backed up by neither of the confidence levels containing zero.
+
+We finally conducted a t-test to test if there is a difference between average susceptibility rates before and after 2004. This gave us a p-value of $0$, and a confidence interval of $(0.0324, 0.0442)$ which doesn't include $0$. These both indicate that we should reject $H_0$ and state that there is a significant difference in mean susceptibility rates before and after 2004.
+
+We can hence state that there was a significant change in measles susceptibility after the retraction of the Wakefield article, and this did happen in 2004, coinciding with the retraction of the article as well.
