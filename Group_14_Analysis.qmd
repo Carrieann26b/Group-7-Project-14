@@ -68,6 +68,9 @@ This computation yielded a new column, as presented in the following table.
 #| echo: false
 #| eval: true
 #| cache: true
+#| label: tbl-rate
+#| tbl-cap: "Measles Susceptibility Data"
+#| tbl-cap-location: top
 
 # Calculate the measles susceptibility rate
 measles$rate <- measles$Y / measles$N
@@ -78,7 +81,6 @@ yearly_avg_rate <-  measles %>%
 rate_table <- measles %>%
   head() %>%
   gt() %>%
-  tab_header(title = "Measles Susceptibility Data") %>%
   cols_label(
     Year = "Year",
     Y = "Susceptible Children",
@@ -272,9 +274,11 @@ $$
 H_0:\mu_{pre2004}=\mu_{post2004}~~~~\text{and}~~~~H_1:\mu_{pre2004}\neq\mu_{post2004}
 $$
 
-The table shows that p-value is less than 0.05, so we reject the null hypothesis.
+@tbl-pvalue shows that p-value is less than 0.05, so we reject the null hypothesis.
 
 ```{r}
+#| label: tbl-pvalue
+#| tbl-cap: "95% t-test Results"
 
 # Split the data (with 2004 as the boundary)
 pre_2004 <- measles %>% 
@@ -289,7 +293,7 @@ t_test <- t.test(pre_2004, post_2004)
 
 t_test_df <- data.frame(
   "Statistic" = c("t-value", "Df", "p-value", 
-                  "95% CI Lower", "95% CI Upper", 
+                  "95% CI Low", "95% CI High", 
                   "Pre_2004 Mean", "Post_2004 Mean"),
   "Value" = c(
     round(t_test$statistic, 4),
